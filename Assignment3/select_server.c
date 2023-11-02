@@ -15,6 +15,9 @@
 #include <stdint.h>
 #include <time.h>
 
+#define LOG_FILE_NAME "logfile.txt"
+FILE *filedis = NULL;
+
 #define NUM_SIZE 4000
 
 #define SERVER_PORT 8080
@@ -45,7 +48,7 @@ int main ()
     }
 
     memset(&server_address, '\0', sizeof(server_address));
-	server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+	server_address.sin_addr.s_addr = inet_addr("10.0.2.15");
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(SERVER_PORT);
 
@@ -67,6 +70,7 @@ int main ()
     FD_SET(listener, &fds);
     int fdmax = listener;
     int newsocket;
+    if( filedis == NULL)filedis = fopen( LOG_FILE_NAME, "w");
 
     while(1){
 
@@ -90,7 +94,7 @@ int main ()
                     int PORT_NO = ntohs(client_address.sin_port);
                     
 
-                    
+                    fprintf(filedis, "IP : %s  PORT : %d\n", IP, PORT_NO);
                     printf("Connection accepted from IP : %s: and PORT : %d\n", IP, PORT_NO);
 
                     FD_SET(newsocket, &fds);
@@ -113,5 +117,7 @@ int main ()
         }
         
     }
+    
+    close(listener);
     return 0;
 }
