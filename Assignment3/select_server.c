@@ -61,7 +61,7 @@ int main ()
     }
 
 
-    socklen_t addrlen;
+    socklen_t addrlen = sizeof(client_address);
     fd_set fds, readfds;
     FD_ZERO(&fds);
     FD_SET(listener, &fds);
