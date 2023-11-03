@@ -33,22 +33,30 @@ long long factorial(long long n){
 
 }
 
-int main ()
-{
+int main (){
+
+    printf("start\n");
+    
+
+    if( filedis == NULL)filedis = fopen( LOG_FILE_NAME, "w");
+    fprintf(filedis, "start");
     int listener = 1;
     socklen_t length;
     struct sockaddr_in server_address, client_address;
     char recv_message[100];
-
-
+    fprintf(filedis,"start");
+	
     listener = socket (AF_INET, SOCK_STREAM, 0);
     if (listener < 0){
         perror("socket error");
         exit(1);
+        return 1;
     }
+    printf("listening");
+    fprintf(filedis,"listening");
 
     memset(&server_address, '\0', sizeof(server_address));
-	server_address.sin_addr.s_addr = inet_addr("10.0.2.15");
+	server_address.sin_addr.s_addr = inet_addr("10.0.2.4");
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(SERVER_PORT);
 
@@ -70,7 +78,7 @@ int main ()
     FD_SET(listener, &fds);
     int fdmax = listener;
     int newsocket;
-    if( filedis == NULL)filedis = fopen( LOG_FILE_NAME, "w");
+    
 
     while(1){
 
