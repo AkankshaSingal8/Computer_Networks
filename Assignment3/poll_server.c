@@ -75,6 +75,7 @@ int main (){
     pollfds -> events = POLLIN;
     pollfds -> revents = 0;
     numfds = 1;
+    socklen_t addrlen;
 
     while (1) {
         
@@ -96,20 +97,20 @@ int main (){
                             exit(1);
                         }
 
-                        (pollfds + numfds ) -> fd = newSocket;
+                        (pollfds + numfds ) -> fd = fd_new;
                         (pollfds + numfds ) -> events = POLLIN;
                         (pollfds + numfds ) -> revents = 0;
 
                         numfds++;
 
-                        char *ip_addr = inet_ntoa(clienAddr.sin_addr);
-                        int port = ntohs(clienAddr.sin_port);
+                        char *ip_addr = inet_ntoa(client_address.sin_addr);
+                        int port = ntohs(client_address.sin_port);
                         printf("Connection IP : %s: and PORT : %d\n", ip_addr, port);
 
                     }
                     else{
                         memset(&recv_message, '\0', 1024);
-                        ssize_t numbytes = recv ((pollfds + fd) -> fd, &recv_message, sizeof (struct message), 0);
+                        ssize_t numbytes = recv ((pollfds + fd) -> fd, &recv_message, sizeof (recv_message), 0);
    
                         if (numbytes == -1){
                             perror("recv error");
@@ -123,7 +124,7 @@ int main (){
                         else{
                             sprintf(recv_message, "%lld", factorial(num));
                         }
-                        if (send(fd, &recv_message, sizeof(recv_message), 0) < 0){
+                        if (send( (pollfds + fd) -> fd, &recv_message, sizeof(recv_message), 0) < 0){
                             perror("send error");
                             exit(1);
                         }

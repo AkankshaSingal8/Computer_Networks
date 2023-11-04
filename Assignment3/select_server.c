@@ -96,13 +96,13 @@ int main (){
                         exit(1);
                     }
 
-                    char *ip_addr = inet_ntoa(clienAddr.sin_addr);
-                    int port = ntohs(clienAddr.sin_port);
+                    char *ip_addr = inet_ntoa(client_address.sin_addr);
+                    int port = ntohs(client_address.sin_port);
                     printf("Connection IP : %s: and PORT : %d\n", ip_addr, port);
 
                     FD_SET(fd_new, &fds);
                     if( fd_new > fdmax){
-                        fdmax = newsocket;
+                        fdmax = fd_new;
                     }
                     
 
@@ -115,17 +115,7 @@ int main (){
                         perror("recv error");
                         exit(1);
                     }
-                    else if (numbytes == 0){
-                        fprintf(stderr, "socket closed by client", fd);
-                        if (close(fd) == -1){
-                            perror("close error");
-                            exit(1);
-                        }
-                        FD_CLR(fd, &fds);
-                    }
-                    else{
-                        recv_message[numbytes] = '\0';
-                    }
+                    
 
                     long long num = atoi(recv_message);
                     if (num > 20){
