@@ -37,7 +37,7 @@ int main() {
     }
 
     memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_addr.s_addr = inet_addr("10.0.2.4");
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(SERVER_PORT);
 
@@ -52,7 +52,7 @@ int main() {
         exit(1);
     }
 
-    struct pollfd fds[BACKLOG + 1]; // +1 for the listener
+    struct pollfd fds[BACKLOG + 1]; 
     memset(fds, 0, sizeof(fds));
     fds[0].fd = listener;
     fds[0].events = POLLIN;
