@@ -1,27 +1,38 @@
+// include statements used from the link provided
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdbool.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <poll.h>
+#include <errno.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <ctype.h>
+#include <stdint.h>
+#include <time.h>
 
 #define SERVER_PORT 8080
 #define BACKLOG 4000
 
 long long factorial(long long n) {
+
     unsigned long long result = 1;
     for (int i = 1; i < n + 1; i++) {
         result *= i;
     }
     return result;
+
 }
 
 int main() {
+
     int listener, optval = 1;
+    socklen_t length;
     struct sockaddr_in server_address, client_address;
     char recv_message[1024];
 

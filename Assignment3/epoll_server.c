@@ -63,6 +63,7 @@ int main (){
 
     if(listen(listener, BACKLOG) < 0){
         perror("listen erro\n");
+        exit(1);
     }
 
     int efd;
