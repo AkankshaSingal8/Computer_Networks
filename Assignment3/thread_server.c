@@ -11,9 +11,10 @@
 #define BACKLOG 4000
 #define BUFFER_SIZE 2048
 
-long long factorial(long long n) {
+long long factorial(long long n){
+    
     long long result = 1;
-    for (long long i = 2; i <= n; ++i) {
+    for (int i = 1; i <= n; ++i){
         result *= i;
     }
     return result;
@@ -55,52 +56,51 @@ void *handle_client(void *arg) {
 }
 
 int main() {
+
     int listener, *new_sock;
-    struct sockaddr_in server_addr, client_addr;
+    struct sockaddr_in server_address, client_address;
     socklen_t addrlen;
-    pthread_t thread_id;
+    char buffer[BUFFER_SIZE];
 
     listener = socket(AF_INET, SOCK_STREAM, 0);
     if (listener < 0) {
         perror("socket error");
         exit(EXIT_FAILURE);
     }
+    
+    memset(&server_address, 0, sizeof(server_address));
+    server_address.sin_addr.s_addr = inet_addr("10.0.2.4");
+	server_address.sin_family = AF_INET;
+	server_address.sin_port = htons(SERVER_PORT);
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr("10.0.2.4");
-    server_addr.sin_port = htons(SERVER_PORT);
-
-    if (bind(listener, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
         perror("bind error");
         exit(EXIT_FAILURE);
     }
 
-    if (listen(listener, BACKLOG) < 0) {
+    if (listen(listener, BACKLOG) == -1) {
         perror("listen error");
         exit(EXIT_FAILURE);
     }
 
-    printf("Server is listening on port %d...\n", SERVER_PORT);
+    
 
     while (1) {
-        addrlen = sizeof(client_addr);
-        new_sock = malloc(sizeof(int)); // Allocate memory for the socket descriptor
+        addrlen = sizeof(client_address);
+        new_sock = malloc(sizeof(int)); 
         if (!new_sock) {
             perror("malloc error");
             continue;
         }
 
-        *new_sock = accept(listener, (struct sockaddr *)&client_addr, &addrlen);
+        *new_sock = accept(listener, (struct sockaddr *)&client_address, &addrlen);
         if (*new_sock < 0) {
             perror("accept error");
             free(new_sock);
             continue;
         }
 
-        printf("New connection from %s on socket %d\n", inet_ntoa(client_addr.sin_addr), *new_sock);
-
-        // Create a new thread to handle the new connection
+        
         if (pthread_create(&thread_id, NULL, handle_client, new_sock) != 0) {
             perror("pthread_create error");
             close(*new_sock);
@@ -108,10 +108,10 @@ int main() {
             continue;
         }
 
-        pthread_detach(thread_id); // Detach the thread; no need to join it later
+        pthread_detach(thread_id); 
     }
 
-    // Close the listener (never reached in this example)
+   
     close(listener);
     return 0;
 }
