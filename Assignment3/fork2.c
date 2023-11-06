@@ -68,29 +68,30 @@ int main() {
         } 
         else if (pid == 0) {
             close(listener);
+            ssize_t numbytes;
 
-            ssize_t numbytes = recv( fd, &buffer, sizeof(buffer), 0);
+            while ((bytes_read = recv(new, buffer, BUFFER_SIZE, 0)) > 0) {
+                
+                long long num = atoll(buffer);
+                            
+                if (num > 20){
+                    sprintf(buffer, "%lld", factorial(20));
+                    
+                }
+                else{
+                    sprintf(buffer, "%lld", factorial(num));
+                }
+                
+                
+                if (send(new, &buffer, sizeof(buffer), 0) < 0){
+                    perror("send error");
+                    exit(1);
+                }
+            }
             if (numbytes == -1){
                 perror("recv error");
-                
-            }
             
-            long long num = atoll(buffer);
-                        
-            if (num > 20){
-                sprintf(buffer, "%lld", factorial(20));
-                
             }
-            else{
-                sprintf(buffer, "%lld", factorial(num));
-            }
-            
-            
-            if (send(new, &buffer, sizeof(buffer), 0) < 0){
-                perror("send error");
-                exit(1);
-            }
-            
             
             close(new);
             exit(0); 
