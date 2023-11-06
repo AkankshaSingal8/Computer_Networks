@@ -8,8 +8,8 @@
 #include <arpa/inet.h>
 
 #define SERVER_PORT 8080
-#define BACKLOG 10
-#define BUFFER_SIZE 1024
+#define BACKLOG 4000
+#define BUFFER_SIZE 2048
 
 long long factorial(long long n) {
     long long result = 1;
