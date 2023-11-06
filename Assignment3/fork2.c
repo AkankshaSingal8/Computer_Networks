@@ -69,7 +69,7 @@ int main() {
         else if (pid == 0) {
             close(listener);
 
-            ssize_t numbytes = recv( fd, &buffer, sizeof(buffer), 0);
+            ssize_t numbytes = recv( new, &buffer, sizeof(buffer), 0);
             if (numbytes == -1){
                 perror("recv error");
                 
