@@ -19,7 +19,7 @@
 
 #define SERVER_PORT 8080
 #define BACKLOG 4000
-#define MAX_CLIENTS 4000  // Define max clients
+#define MAX_CLIENTS 4000
 #define BUFFER_SIZE 1024
 
 long long factorial(long long n){
@@ -33,11 +33,10 @@ long long factorial(long long n){
 }
 
 int main() {
-    int listener, new_sock, fdmax, i, nbytes;
-    socklen_t addrlen;
-    struct sockaddr_in server_addr, client_addr;
+
+    int listener;
+    struct sockaddr_in server_address, client_address;
     char buffer[BUFFER_SIZE];
-    fd_set master_fds, read_fds;
     int optval = 1;
    
     listener = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,9 +45,6 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Set listener socket to non-blocking mode
-    // Use fcntl to get and then set socket properties
-    // ... (code to set non-blocking mode)
     if (fcntl(listener, F_SETFL, O_NONBLOCK) < 0) {
         perror("fcntl O_NONBLOCK failed");
         exit(EXIT_FAILURE);
@@ -60,12 +56,12 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr("10.0.2.4");
-    server_addr.sin_port = htons(SERVER_PORT);
-    memset(&(server_addr.sin_zero), '\0', 8);
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr("10.0.2.4");
+    server_address.sin_port = htons(SERVER_PORT);
+    memset(&(server_address.sin_zero), '\0', 8);
    
-    if (bind(listener, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
         perror("bind error");
         exit(EXIT_FAILURE);
     }
@@ -75,53 +71,60 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Set up the master file descriptor set
-    FD_ZERO(&master_fds);
-    FD_SET(listener, &master_fds);
-    fdmax = listener; // Initially, the listener has the highest file descriptor value
+    int fdmax, fd_new, numbytes;
+    socklen_t addrlen;
+    fd_set fds, readfds;
+    FD_ZERO(&fds);
+    FD_SET(listener, &fds);
+    fdmax = listener; 
    
     while (1) {
-        read_fds = master_fds; // copy it
+        readfds = fds; 
 
-        if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
+        if (select(fdmax + 1, &readfds, NULL, NULL, NULL) == -1) {
             perror("select error");
             exit(EXIT_FAILURE);
         }
        
-        for(i = 0; i <= fdmax; i++) {
-            if (FD_ISSET(i, &read_fds)) { // we got one!!
-                if (i == listener) {
-                    // handle new connections
-                    addrlen = sizeof(client_addr);
-                    if ((new_sock = accept(listener, (struct sockaddr *)&client_addr, &addrlen)) < 0) {
+        for(int fd = 0; fd <= fdmax; fd++) {
+
+            if (FD_ISSET(fd, &readfds)) {
+
+                if (fd == listener) {
+                    
+                    addrlen = sizeof(client_address);
+                    if ((fd_new = accept(listener, (struct sockaddr *)&client_address, &addrlen)) < 0) {
                         perror("accept error");
-                    } else {
-                        FD_SET(new_sock, &master_fds); // add to master set
-                        if (new_sock > fdmax) { // keep track of the max
-                            fdmax = new_sock;
-                        }
-                        printf("New connection from %s on socket %d\n",
-                            inet_ntoa(client_addr.sin_addr), new_sock);
                     }
-                } else {
-                    // handle data from a client
-                    if ((nbytes = recv(i, buffer, sizeof(buffer), 0)) <= 0) {
+                    else {
+
+                        FD_SET(fd_new, &fds);
+                        if (fd_new > fdmax) {
+                            fdmax = fd_new;
+                        }
                         
-                        close(i); // bye!
-                        FD_CLR(i, &master_fds); // remove from master set
-                    } else {
-                        // we got some data from a client
+                    }
+                }
+                else {
+                    
+                    if ((numbytes = recv(fd, buffer, sizeof(buffer), 0)) <= 0) {
+                        close(fd);
+                        FD_CLR(fd, &fds); 
+                    }
+                    else {
+                        
                         long long num = atoll(buffer);
                         long long result;
                        
-                        if (num > 20 || num < 0) { // Cap factorial to 20 to avoid overflow or negative input
+                        if (num > 20) { 
                             result = factorial(20);
-                        } else {
+                        }
+                        else {
                             result = factorial(num);
                         }
                        
                         sprintf(buffer, "%lld", result);
-                        if (send(i, buffer, strlen(buffer), 0) == -1) {
+                        if (send(fd, buffer, strlen(buffer), 0) == -1) {
                             perror("send error");
                         }
                     }
@@ -130,7 +133,7 @@ int main() {
         }
     }
    
-    return 0; // This won't happen as the server is in a while(1) loop
+    return 0;
 }
 
 
