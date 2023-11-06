@@ -64,7 +64,7 @@ int main (){
 
     if(listen(listener, BACKLOG) < 0){
         perror("listen erro\n");
-        exit(1);
+        
     }
 
 
@@ -109,12 +109,12 @@ int main (){
 
                 }
                 else{  
-                    memset(&recv_message, '\0', 1024);
+                    memset(&recv_message, '\0', sizeof(recv_message));
 
                     ssize_t numbytes = recv( fd, &recv_message, sizeof(recv_message), 0);
                     if (numbytes == -1){
                         perror("recv error");
-                        exit(1);
+                        
                     }
                     
 
