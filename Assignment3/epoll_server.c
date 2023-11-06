@@ -1,58 +1,41 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <sys/epoll.h>
 #include <errno.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <sys/epoll.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <time.h>
+#include <fcntl.h>
 
 #define SERVER_PORT 8080
 #define BACKLOG 4000
-#define MAX_EVENTS 4000
+#define MAX_CLIENTS 4000
 #define BUFFER_SIZE 1024
 
-long long factorial(long long n) {
-    long long result = 1;
-    for (long long i = 1; i <= n; i++) {
-        result *= i;
-    }
-    return result;
+long long factorial(long long n){
+
+	unsigned long long result = 1;
+	for (int i = 1 ; i < n + 1 ; i++){
+		result *= i;
+	}
+	return result;
+
 }
 
-int make_socket_non_blocking(int sfd) {
-    int flags, s;
-
-    flags = fcntl(sfd, F_GETFL, 0);
-    if (flags == -1) {
-        perror("fcntl");
-        return -1;
-    }
-
-    flags |= O_NONBLOCK;
-    s = fcntl(sfd, F_SETFL, flags);
-    if (s == -1) {
-        perror("fcntl");
-        return -1;
-    }
-
-    return 0;
-}
 
 int main() {
+
     int listener, new_sock, epoll_fd, s;
-    socklen_t addrlen;
-    struct sockaddr_in server_addr, client_addr;
-    struct epoll_event event, events[MAX_EVENTS];
+    struct sockaddr_in server_address, client_address;
     int optval = 1;
 
     listener = socket(AF_INET, SOCK_STREAM, 0);
@@ -61,8 +44,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    s = make_socket_non_blocking(listener);
-    if (s == -1) {
+    if (fcntl(listener, F_SETFL, O_NONBLOCK) < 0) {
+        perror("fcntl O_NONBLOCK failed");
         exit(EXIT_FAILURE);
     }
 
@@ -71,14 +54,15 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr("10.0.2.4"); // Make sure to use the correct IP address
-    server_addr.sin_port = htons(SERVER_PORT);
-    memset(&(server_addr.sin_zero), '\0', 8);
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr("10.0.2.4"); 
+    server_address.sin_port = htons(SERVER_PORT);
+    memset(&(server_address.sin_zero), '\0', 8);
 
-    if (bind(listener, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    int bind_val = bind(listener, (struct sockaddr*)&server_address, sizeof(server_address));
+	if (bind_val < 0){
         perror("bind error");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     if (listen(listener, BACKLOG) < 0) {
@@ -86,6 +70,9 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+
+    socklen_t addrlen;
+    struct epoll_event event, events[MAX_CLIENTS];
     epoll_fd = epoll_create1(0);
     if (epoll_fd == -1) {
         perror("epoll_create1");
@@ -93,36 +80,35 @@ int main() {
     }
 
     event.data.fd = listener;
-    event.events = EPOLLIN | EPOLLET; // Read operation | Edge-triggered behavior
+    event.events = EPOLLIN | EPOLLET; 
     s = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listener, &event);
     if (s == -1) {
         perror("epoll_ctl");
         exit(EXIT_FAILURE);
     }
 
-    // Buffer where events are returned
-    events[MAX_EVENTS];
+    
+    events[MAX_CLIENTS];
 
-    // The event loop
     while (1) {
         int n, i;
 
-        n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        n = epoll_wait(epoll_fd, events, MAX_CLIENTS, -1);
         for (i = 0; i < n; i++) {
             if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) ||
                 (!(events[i].events & EPOLLIN))) {
-                // An error has occured on this fd, or the socket is not ready for reading
+                
                 fprintf(stderr, "epoll error\n");
                 close(events[i].data.fd);
                 continue;
             } else if (listener == events[i].data.fd) {
-                // We have a notification on the listening socket, which means one or more incoming connections.
+                
                 while (1) {
-                    addrlen = sizeof(client_addr);
-                    new_sock = accept(listener, (struct sockaddr *)&client_addr, &addrlen);
+                    addrlen = sizeof(client_address);
+                    new_sock = accept(listener, (struct sockaddr *)&client_address, &addrlen);
                     if (new_sock == -1) {
                         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-                            // We have processed all incoming connections.
+                            
                             break;
                         } else {
                             perror("accept");
@@ -130,10 +116,11 @@ int main() {
                         }
                     }
 
-                    s = make_socket_non_blocking(new_sock);
-                    if (s == -1) {
-                        abort();
+                    if (fcntl(listener, F_SETFL, O_NONBLOCK) < 0) {
+                        perror("fcntl O_NONBLOCK failed");
+                        exit(EXIT_FAILURE);
                     }
+
 
                     event.data.fd = new_sock;
                     event.events = EPOLLIN | EPOLLET; // Read operation | Edge-triggered behavior
@@ -144,8 +131,9 @@ int main() {
                     }
                 }
                 continue;
-            } else {
-                // We have data on the fd waiting to be read. Read and display it.
+            }
+            else {
+                
                 int done = 0;
 
                 while (1) {

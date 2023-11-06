@@ -65,29 +65,33 @@ int main() {
             perror("fork error");
             close(new);
             
-
         } 
         else if (pid == 0) {
             close(listener);
-            ssize_t bytes_read;
-            long long num, result;
 
-            
-            while ((bytes_read = recv(new, buffer, BUFFER_SIZE, 0)) > 0) {
-                buffer[bytes_read] = '\0'; 
-                num = atoll(buffer);
-                if (num < 0 || num > 20) {
-                    num = (num < 0) ? 0 : 20; 
-                }
-                result = factorial(num);
-                sprintf(buffer, "%lld", result);
-                send(new, buffer, strlen(buffer), 0);
-            }
-
-            if (bytes_read == -1) {
+            ssize_t numbytes = recv( fd, &buffer, sizeof(buffer), 0);
+            if (numbytes == -1){
                 perror("recv error");
+                
             }
-
+            
+            long long num = atoll(buffer);
+                        
+            if (num > 20){
+                sprintf(buffer, "%lld", factorial(20));
+                
+            }
+            else{
+                sprintf(buffer, "%lld", factorial(num));
+            }
+            
+            
+            if (send(new, &buffer, sizeof(buffer), 0) < 0){
+                perror("send error");
+                exit(1);
+            }
+            
+            
             close(new);
             exit(0); 
         }
