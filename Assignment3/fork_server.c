@@ -87,6 +87,7 @@ int main() {
             if (bytes_read == -1) {
                 perror("recv error");
             }
+            
 
             close(new);
             exit(0); 
