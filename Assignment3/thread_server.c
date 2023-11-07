@@ -21,36 +21,40 @@ long long factorial(long long n){
 }
 
 void *thread_function(void *arg) {
-    int socket = *(int*)arg;
-    free(arg);
+    int new = *(int*)arg;
+    free(arg); 
 
     char buffer[BUFFER_SIZE];
     ssize_t numbytes;
 
-    while ((numbytes = recv(socket, buffer, BUFFER_SIZE, 0)) > 0) {
+    
+    while ((numbytes = recv(new, buffer, sizeof(buffer) - 1, 0)) > 0) {
+        buffer[numbytes] = '\0';
         
         long long num = atoll(buffer);
-                    
-        if (num > 20){
-            sprintf(buffer, "%lld", factorial(20));
-            
-        }
-        else{
-            sprintf(buffer, "%lld", factorial(num));
-        }
+        long long result;
+
         
+        if (num > 20) { 
+        	result = factorial(20);
+        }
+        else {
+        	result = factorial(num);
+        }
+                       
+        sprintf(buffer, "%lld", result);
+
         
-        if (send(socket, &buffer, sizeof(buffer), 0) < 0){
+        if (send(new, buffer, strlen(buffer), 0) == -1) {
             perror("send error");
-            exit(1);
         }
-    }
-    if (numbytes == -1){
-        perror("recv error");
-    
     }
 
-    close(socket); 
+    if (numbytes == -1) {
+        perror("recv error");
+    }
+
+    close(new); 
     return NULL;
 }
 
@@ -99,16 +103,16 @@ int main() {
             continue;
         }
 
-        pthread_t thread_id;
+        pthread_t pid;
         
-        if (pthread_create(&thread_id, NULL, thread_function, new) != 0) {
+        if (pthread_create(&pid, NULL, thread_function, new) != 0) {
             perror("pthread_create error");
             close(*new);
             free(new);
             continue;
         }
 
-        pthread_detach(thread_id); 
+        pthread_detach(pid); 
     }
 
    
