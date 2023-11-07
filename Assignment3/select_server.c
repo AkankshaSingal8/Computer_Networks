@@ -123,7 +123,7 @@ int main() {
                             result = factorial(num);
                         }
                        
-                        sprintf(buffer, "%lld", result);
+                        sprintf(buffer, "%llu", result);
                         if (send(fd, buffer, strlen(buffer), 0) == -1) {
                             perror("send error");
                         }

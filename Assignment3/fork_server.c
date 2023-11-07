@@ -79,7 +79,7 @@ int main() {
                     
                 }
                 else{
-                    sprintf(buffer, "%lld", factorial(num));
+                    sprintf(buffer, "%llu", factorial(num));
                 }
                 
                 
