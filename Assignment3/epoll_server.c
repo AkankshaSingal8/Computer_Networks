@@ -71,6 +71,7 @@ int main() {
     }
 
 
+    int efd;
     socklen_t addrlen;
     struct epoll_event event, events[MAX_CLIENTS];
     epoll_fd = epoll_create1(0);
@@ -123,7 +124,7 @@ int main() {
 
 
                     event.data.fd = new_sock;
-                    event.events = EPOLLIN | EPOLLET; // Read operation | Edge-triggered behavior
+                    event.events = EPOLLIN | EPOLLET;
                     s = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_sock, &event);
                     if (s == -1) {
                         perror("epoll_ctl");
@@ -131,50 +132,51 @@ int main() {
                     }
                 }
                 continue;
+
             }
             else {
                 
-                int done = 0;
-
+                bool done = false;
                 while (1) {
-                    ssize_t count;
-                    char buf[BUFFER_SIZE];
-
-                    count = read(events[i].data.fd, buf, sizeof buf);
+                    char buf[BUFFER_SIZE] = {0};
+                    ssize_t count = read(events[i].data.fd, buf, sizeof(buf) - 1); 
                     if (count == -1) {
-                        // If errno == EAGAIN, that means we have read all data.
                         if (errno != EAGAIN) {
-                            perror("read");
-                            done = 1;
+                            perror("read error");
+                            done = true;
                         }
-                        break;
+                        break; 
                     } else if (count == 0) {
-                        // End of file. The remote has closed the connection.
-                        done = 1;
+                        
+                        done = true;
                         break;
                     }
 
-                    // Write the buffer to standard output
-                    s = write(1, buf, count);
-                    if (s == -1) {
-                        perror("write");
-                        abort();
+                    
+                    char *endptr;
+                    unsigned long long int n = strtoull(buf, &endptr, 10);
+                    if (endptr == buf) {
+                        // No number found, send error message back to client
+                        snprintf(buf, sizeof(buf), "Error: No valid number provided.\n");
+                        count = strlen(buf);
+                    } else {
+                        // Calculate factorial and convert the result back to string
+                        unsigned long long result = factorial(n);
+                        snprintf(buf, sizeof(buf), "%llu\n", result);
+                        count = strlen(buf);
                     }
 
-                    // Echo the data back to the client
-                    s = send(events[i].data.fd, buf, count, 0);
-                    if (s == -1) {
-                        perror("send");
-                        abort();
+                    
+                    if (send(events[i].data.fd, buf, count, 0) == -1) {
+                        perror("send error");
+                        done = true;
                     }
                 }
 
-                if (done) {
-                    printf("Closed connection on descriptor %d\n", events[i].data.fd);
-
-                    // Closing the descriptor will make epoll remove it from the set of descriptors which are monitored.
+                if (done) {        
                     close(events[i].data.fd);
                 }
+            
             }
         }
     }
