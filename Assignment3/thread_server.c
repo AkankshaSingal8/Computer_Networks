@@ -20,47 +20,45 @@ long long factorial(long long n){
     return result;
 }
 
-void *handle_client(void *arg) {
-    int client_sock = *(int*)arg;
-    free(arg); // Free the allocated memory for the integer pointer
+void *thread_function(void *arg) {
+    int socket = *(int*)arg;
+    free(arg);
 
     char buffer[BUFFER_SIZE];
-    ssize_t nbytes;
+    ssize_t numbytes;
 
-    // Read data from client
-    while ((nbytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[nbytes] = '\0'; // Null-terminate the received data
+    while ((numbytes = recv(socket, buffer, BUFFER_SIZE, 0)) > 0) {
+        
         long long num = atoll(buffer);
-        long long result;
-
-        // Calculate factorial, with boundary checks
-        if (num < 0) {
-            strcpy(buffer, "Error: Negative number\n");
-        } else {
-            result = factorial(num);
-            snprintf(buffer, BUFFER_SIZE, "%lld\n", result);
+                    
+        if (num > 20){
+            sprintf(buffer, "%lld", factorial(20));
+            
         }
-
-        // Send response to client
-        if (send(client_sock, buffer, strlen(buffer), 0) == -1) {
+        else{
+            sprintf(buffer, "%lld", factorial(num));
+        }
+        
+        
+        if (send(socket, &buffer, sizeof(buffer), 0) < 0){
             perror("send error");
+            exit(1);
         }
     }
-
-    if (nbytes == -1) {
+    if (numbytes == -1){
         perror("recv error");
+    
     }
 
-    close(client_sock); // Close client connection
+    close(socket); 
     return NULL;
 }
 
 int main() {
 
-    int listener, *new_sock;
+    int listener;
     struct sockaddr_in server_address, client_address;
-    socklen_t addrlen;
-    char buffer[BUFFER_SIZE];
+    
 
     listener = socket(AF_INET, SOCK_STREAM, 0);
     if (listener < 0) {
@@ -73,38 +71,40 @@ int main() {
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(SERVER_PORT);
 
-    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
+    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
         perror("bind error");
         exit(EXIT_FAILURE);
     }
 
-    if (listen(listener, BACKLOG) == -1) {
+    if (listen(listener, BACKLOG) < 0) {
         perror("listen error");
         exit(EXIT_FAILURE);
     }
 
-    
+    int *new;
+    socklen_t addrlen;
 
     while (1) {
         addrlen = sizeof(client_address);
-        new_sock = malloc(sizeof(int)); 
-        if (!new_sock) {
+        new = malloc(sizeof(int)); 
+        if (!new) {
             perror("malloc error");
             continue;
         }
 
-        *new_sock = accept(listener, (struct sockaddr *)&client_address, &addrlen);
-        if (*new_sock < 0) {
+        *new = accept(listener, (struct sockaddr *)&client_address, &addrlen);
+        if (*new < 0) {
             perror("accept error");
-            free(new_sock);
+            free(new);
             continue;
         }
 
+        pthread_t thread_id;
         
-        if (pthread_create(&thread_id, NULL, handle_client, new_sock) != 0) {
+        if (pthread_create(&thread_id, NULL, thread_function, new) != 0) {
             perror("pthread_create error");
-            close(*new_sock);
-            free(new_sock);
+            close(*new);
+            free(new);
             continue;
         }
 

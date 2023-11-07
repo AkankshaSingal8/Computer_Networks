@@ -40,12 +40,12 @@ int main() {
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(SERVER_PORT);
 
-    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
+    if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
         perror("bind error");
         exit(EXIT_FAILURE);
     }
 
-    if (listen(listener, BACKLOG) == -1) {
+    if (listen(listener, BACKLOG) < 0) {
         perror("listen error");
         exit(EXIT_FAILURE);
     }
@@ -93,10 +93,6 @@ int main() {
             
             }
             
-<<<<<<< HEAD
-
-=======
->>>>>>> 6798ad67ba199cd50755741913fbbae6e160bea4
             close(new);
             exit(0); 
         }
