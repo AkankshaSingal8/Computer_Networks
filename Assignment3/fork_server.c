@@ -37,8 +37,8 @@ int main() {
 
     memset(&server_address, 0, sizeof(server_address));
     server_address.sin_addr.s_addr = inet_addr("10.0.2.4");
-	server_address.sin_family = AF_INET;
-	server_address.sin_port = htons(SERVER_PORT);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(SERVER_PORT);
 
     if (bind(listener, (struct sockaddr *)&server_address, sizeof(server_address)) == -1) {
         perror("bind error");
@@ -65,30 +65,38 @@ int main() {
             perror("fork error");
             close(new);
             
-
         } 
         else if (pid == 0) {
             close(listener);
-            ssize_t bytes_read;
-            long long num, result;
+            ssize_t numbytes;
 
-            
-            while ((bytes_read = recv(new, buffer, BUFFER_SIZE, 0)) > 0) {
-                buffer[bytes_read] = '\0'; 
-                num = atoll(buffer);
-                if (num < 0 || num > 20) {
-                    num = (num < 0) ? 0 : 20; 
+            while ((numbytes = recv(new, buffer, BUFFER_SIZE, 0)) > 0) {
+                
+                long long num = atoll(buffer);
+                            
+                if (num > 20){
+                    sprintf(buffer, "%lld", factorial(20));
+                    
                 }
-                result = factorial(num);
-                sprintf(buffer, "%lld", result);
-                send(new, buffer, strlen(buffer), 0);
+                else{
+                    sprintf(buffer, "%lld", factorial(num));
+                }
+                
+                
+                if (send(new, &buffer, sizeof(buffer), 0) < 0){
+                    perror("send error");
+                    exit(1);
+                }
             }
-
-            if (bytes_read == -1) {
+            if (numbytes == -1){
                 perror("recv error");
+            
             }
             
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6798ad67ba199cd50755741913fbbae6e160bea4
             close(new);
             exit(0); 
         }
