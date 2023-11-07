@@ -13,7 +13,7 @@
 #define BACKLOG 10
 #define BUFFER_SIZE 1024
 
-long long factorial(long long n){
+unsigned long long factorial(long long n){
     
     unsigned long long result = 1;
     for (int i = 1; i <= n; ++i){
@@ -75,7 +75,7 @@ int main() {
                 long long num = atoll(buffer);
                             
                 if (num > 20){
-                    sprintf(buffer, "%lld", factorial(20));
+                    sprintf(buffer, "%llu", factorial(20));
                     
                 }
                 else{

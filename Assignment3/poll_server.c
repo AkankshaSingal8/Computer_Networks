@@ -22,7 +22,7 @@
 #define MAX_CLIENTS 4000
 #define BUFFER_SIZE 1024
 
-long long factorial(long long n){
+unsigned long long factorial(long long n){
 
 	unsigned long long result = 1;
 	for (int i = 1 ; i < n + 1 ; i++){
@@ -127,7 +127,7 @@ int main() {
                     else {
                         
                         long long num = atoll(buffer);
-                        long long result;
+                        unsigned long long result;
                        
                         if (num > 20) { 
                             result = factorial(20);

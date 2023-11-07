@@ -21,7 +21,7 @@
 #define MAX_CLIENTS 4000
 #define BUFFER_SIZE 1024
 
-long long factorial(long long n){
+unsigned long long factorial(long long n){
 
 	unsigned long long result = 1;
 	for (int i = 1 ; i < n + 1 ; i++){

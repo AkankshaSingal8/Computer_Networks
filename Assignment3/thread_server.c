@@ -11,7 +11,7 @@
 #define BACKLOG 4000
 #define BUFFER_SIZE 2048
 
-long long factorial(long long n){
+unsigned long long factorial(long long n){
     
     unsigned long long result = 1;
     for (int i = 1; i <= n; ++i){
@@ -42,7 +42,7 @@ void *thread_function(void *arg) {
         	result = factorial(num);
         }
                        
-        sprintf(buffer, "%lld", result);
+        sprintf(buffer, "%llu", result);
 
         
         if (send(new, buffer, strlen(buffer), 0) == -1) {
